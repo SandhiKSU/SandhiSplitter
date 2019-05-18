@@ -156,6 +156,9 @@ if __name__ == "__main__":
             # l_sandhied = form with Sandhi, l_goal = the Sandhi split that should be obtained
             print('   l_sandhied  : {1} [{0}]'.format(l_sandhied_deva, l_sandhied))
             print('   l_goal      : {1} [{0}]'.format(l_goal_deva, l_goal))
+            if len(l_sandhied) > 25:
+                print('*** Not doing it: too long ***')
+                continue
 
             # new program ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
