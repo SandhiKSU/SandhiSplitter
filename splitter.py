@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-'''
+"""
 Revision        By                                      Changes
 ---------------------------------------------------------------
 0.0.1           Ramanuj Pandey[ramanuj.p7@gmail.com]    Ported whole to code to Python3
@@ -11,22 +11,20 @@ Revision        By                                      Changes
 License
 -------
 Same as original CPP code.
-'''
-
-'''
-TODO: Change variable names and functions to more meaningful ones,
-      Initially I didnt changed them to keep my porting easy when
-      comparing to original source.
-'''
+"""
 
 import os
 import sys
 import logging
 import argparse
 
+
+# TODO: Change variable names and functions to more meaningful ones,
+#   Initially I didn't changed them to keep my porting easy when comparing to original source.
+
 pgm_ver = '0.0.1-beta'
 
-saparator = '\t'
+separator = '\t'
 rules = {}
 words = {}
 weights = {}
@@ -45,17 +43,19 @@ output1 = {}
 
 temp_result_file='temp_result'
 ltproc_bin = '/usr/bin/lt-proc'
-morph_bin  = '../../../morph_bin/skt_morf.bin'
+# morph_bin  = '../../../morph_bin/skt_morf.bin'
+morph_bin = '../scl/morph_bin/all_morf.bin'
 temp_res_intrm_file = 'temp_result_mo'
 res_file = 'result'
 
 
-input_files = {'sandhi':('sandhi_rules.txt', 'sandhi_words.txt','skt_morf.bin'),
-               'samasa':('samAsa_rules.txt', 'samAsa_words.txt','skt_samAsanoun_morf.bin'),
-               'both':('all_rules.txt', 'word_freq.txt','all_morf.bin')
-              }
+input_files = {
+    'sandhi': ('sandhi_rules.txt', 'sandhi_words.txt', 'skt_morf.bin'),
+    'samasa': ('samAsa_rules.txt', 'samAsa_words.txt', 'skt_samAsanoun_morf.bin'),
+    'both': ('all_rules.txt', 'word_freq.txt', 'all_morf.bin')
+}
 
-'''
+"""
  Datastructure selection thoughts:
 
  1.	We need a better searchable datastructure as search happens very frequently 
@@ -65,50 +65,52 @@ input_files = {'sandhi':('sandhi_rules.txt', 'sandhi_words.txt','skt_morf.bin'),
 
  With above considerations, rule db is a dictonary which has value as a list.
 
-'''
+"""
+
 
 def load_rules_and_words(rules_file, words_file):
-    logging.info("Rule loader called with option: (" + rules_file +', ' + words_file + ')')
-    global saparator
+    logging.info("Rule loader called with option: (" + rules_file + ', ' + words_file + ')')
+    global separator
     rules['tot_freq'] = 0
     rule_val_extra = ''
     # If we load with default utf encoding some strings from file fail to load.
     with open(rules_file, encoding='latin-1') as fr:
-      for line in fr:
-         line_by_line = line.strip().split('{}'.format(saparator))
-         rules['tot_freq'] += int(line_by_line[2])
+        for line in fr:
+            line_by_line = line.strip().split('{}'.format(separator))
+            rules['tot_freq'] += int(line_by_line[2])
 
     with open(rules_file, encoding='latin-1') as fr:
-      for line in fr:
-         line_by_line = line.strip().split('{}'.format(saparator))
-         rule_index = line_by_line[0]
-         rule_val   = line_by_line[1]
-         if args.choice == 'sandhi':
-            weights[rule_val+'='+rule_index] = int(line_by_line[2])/rules['tot_freq']
-         elif args.choice == 'samasa':
-            rule_val = rule_val.split('+')[0]+"-+"+rule_val.split('+')[1]+'='+rule_index
-            weights[rule_val] = int(line_by_line[2])/rules['tot_freq']
-         elif args.choice == 'both':
-            rule_val_extra = rule_val.split('+')[0]+"-+"+rule_val.split('+')[1]+'='+rule_index
-            weights[rule_val_extra] = int(line_by_line[2])/rules['tot_freq']
-            weights[rule_val+'='+rule_index[0]] = int(line_by_line[2])/rules['tot_freq']
+        for line in fr:
+            line_by_line = line.strip().split('{}'.format(separator))
+            rule_index = line_by_line[0]
+            rule_val   = line_by_line[1]
+            if args.choice == 'sandhi':
+                weights[rule_val+'='+rule_index] = int(line_by_line[2])/rules['tot_freq']
+            elif args.choice == 'samasa':
+                rule_val = rule_val.split('+')[0]+"-+"+rule_val.split('+')[1]+'='+rule_index
+                weights[rule_val] = int(line_by_line[2])/rules['tot_freq']
+            elif args.choice == 'both':
+                rule_val_extra = rule_val.split('+')[0]+"-+"+rule_val.split('+')[1]+'='+rule_index
+                weights[rule_val_extra] = int(line_by_line[2])/rules['tot_freq']
+                weights[rule_val+'='+rule_index[0]] = int(line_by_line[2])/rules['tot_freq']
 
-         if rule_index in rules.keys():
-            rules[rule_index].append(rule_val)
+            if rule_index in rules.keys():
+                rules[rule_index].append(rule_val)
             if rule_val_extra != '':
                rules[rule_index].append(rule_val_extra)
-         else:
-            rules[rule_index] = [rule_val]
+            else:
+                rules[rule_index] = [rule_val]
             if rule_val_extra != '':
-               rules[rule_index] = [rule_val_extra]
+                rules[rule_index] = [rule_val_extra]
 
-    saparator = ' '
+    separator = ' '
     words['corpus_size'] = 0
     with open(words_file, encoding='latin-1') as fr:
-      for line in fr:
-         line_by_line = line.strip().split('{}'.format(saparator))
-         words[line_by_line[1]] = line_by_line[0]
-         words['corpus_size'] += 1
+        for line in fr:
+            line_by_line = line.strip().split('{}'.format(separator))
+            words[line_by_line[1]] = line_by_line[0]
+            words['corpus_size'] += 1
+
 
 def split_word(input_word):
     global check, index, no_of_splits, split, rule_applied, rules
@@ -167,6 +169,7 @@ def split_word(input_word):
         no_of_splits = temp_no_of_splits
         rule_applied = temp_rule_applied
 
+
 def split_final():
     vechar = []
     vechar1 = []
@@ -206,6 +209,7 @@ def split_final():
 
     for val in content:
         op[val.split('/')[0].split('^')[1]] = 1
+
 
 def calculate_costs():
     global tot_cost, costs, final_costs, output1, op
@@ -264,111 +268,121 @@ def calculate_costs():
             print("%s\t=>No splittings found" % args.word)
             print("%s\t=>\t0" % args.word)
 
+
 def is_readable(binary):
-   return os.path.isfile(binary) and os.access(binary, os.R_OK)
+    return os.path.isfile(binary) and os.access(binary, os.R_OK)
+
 
 def is_executable(binary):
-   return os.path.isfile(binary) and os.access(binary, os.X_OK)
+    return os.path.isfile(binary) and os.access(binary, os.X_OK)
+
 
 def is_writable(binary):
-   return os.path.isfile(binary) and os.access(binary, os.W_OK)
+    return os.path.isfile(binary) and os.access(binary, os.W_OK)
 
-parser = argparse.ArgumentParser(description='Sandhi splitting program:\nVersion: %s.' % pgm_ver)
-parser.add_argument('-c', '--choice', nargs = '?', choices=('sandhi', 'samasa', 'both'), default = 'sandhi', help = "Choose what openration to do.")
-parser.add_argument('-m', '--morphbin', required=True, help='Path of morph binary to use.')
-parser.add_argument('-o', '--output', help='Result should be written to this file.')
-parser.add_argument('-s', '--switch', nargs = '?', choices=('compare', 'testing'), default = 'testing', help = "Choose the right switch.")
-parser.add_argument('-v', '--verbose', type=int, choices=[1,2], help='Adjust verbocity level.')
-parser.add_argument('word', nargs='?', help='Word to split.')
-args = parser.parse_args()
 
-if not args.verbose:
-    logging.basicConfig(level=logging.WARNING)
-elif args.verbose == 1:
-    logging.basicConfig(level=logging.INFO)
-elif args.verbose == 2:
-    logging.basicConfig(level=logging.DEBUG)
+# ---------------------------------------------------- Main section ----------------------------------------------------
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Sandhi splitting program:\nVersion: %s.' % pgm_ver)
+    parser.add_argument(
+        '-c', '--choice', nargs='?',
+        choices=('sandhi', 'samasa', 'both'), default='sandhi', help="Choose what openration to do.")
+    parser.add_argument('-m', '--morphbin', required=True, help='Path of morph binary to use.')
+    parser.add_argument('-o', '--output', help='Result should be written to this file.')
+    parser.add_argument(
+        '-s', '--switch', nargs='?', choices=('compare', 'testing'),
+        default='testing', help="Choose the right switch.")
+    parser.add_argument('-v', '--verbose', type=int, choices=[1,2], help='Adjust verbocity level.')
+    parser.add_argument('word', nargs='?', help='Word to split.')
+    args = parser.parse_args()
 
-logging.info("Arguments to program status: \n %s" % args)
-logging.info("This run is for: " + args.choice)
+    if not args.verbose:
+        logging.basicConfig(level=logging.WARNING)
+    elif args.verbose == 1:
+        logging.basicConfig(level=logging.INFO)
+    elif args.verbose == 2:
+        logging.basicConfig(level=logging.DEBUG)
 
-''' Load rules '''
-optn_selected = input_files[args.choice]
-load_rules_and_words(optn_selected[0], optn_selected[1])
-''' Load rule ends'''
+    logging.info("Arguments to program status: \n %s" % args)
+    logging.info("This run is for: " + args.choice)
 
-''' Sanity begins '''
-# Not doing sanity on rule and word files as we are not taking these from user now.
-if not args.output:
-   logging.info("Will use default file name and location.")
+    ''' Load rules '''
+    optn_selected = input_files[args.choice]
+    load_rules_and_words(optn_selected[0], optn_selected[1])
+    ''' Load rule ends'''
 
-if not is_readable(args.morphbin):
-   logging.error("Morph bin not reable, Exiting...")
-   sys.exit(1)
+    ''' Sanity begins '''
+    # Not doing sanity on rule and word files as we are not taking these from user now.
+    if not args.output:
+       logging.info("Will use default file name and location.")
 
-if not (is_readable(optn_selected[0]) and is_readable(optn_selected[1])):
-   logging.error("Check rules and word file, Exiting...")
-   sys.exit(1)
+    if not is_readable(args.morphbin):
+       logging.error("Morph bin not reable, Exiting...")
+       sys.exit(1)
 
-if not args.word:
-   logging.error("Provide word to split. Exiting...")
-   sys.exit(2)
+    if not (is_readable(optn_selected[0]) and is_readable(optn_selected[1])):
+       logging.error("Check rules and word file, Exiting...")
+       sys.exit(1)
 
-''' Sanity ends '''
+    if not args.word:
+       logging.error("Provide word to split. Exiting...")
+       sys.exit(2)
 
-logging.info("Loaded corpus size: %d" % words['corpus_size'])
-logging.info("Total frequency of rules: %d" % rules['tot_freq'])
-logging.debug("Loaded rules: %s " % rules)
-logging.debug("Loaded weight: %s" % weights)
+    ''' Sanity ends '''
 
-''' Call word split routing and update globals with output. '''
-split_word(args.word)
+    logging.info("Loaded corpus size: %d" % words['corpus_size'])
+    logging.info("Total frequency of rules: %d" % rules['tot_freq'])
+    logging.debug("Loaded rules: %s " % rules)
+    logging.debug("Loaded weight: %s" % weights)
 
-logging.debug("------------------------")
-logging.debug("Printing Split: \n%s" % split)
-logging.debug("Printing Index: \n%s" % index)
-logging.debug("Printing no of splits: \n%s" % no_of_splits)
-logging.debug("Printing rules applied: \n%s" % rule_applied)
-logging.debug("------------------------")
+    ''' Call word split routing and update globals with output. '''
+    split_word(args.word)
 
-''' Does further split of rules and words and queries morpholigical place and writes result in a result file '''
-split_final()
-''' Output of result file is matching in b/w Python and CPP code with only order difference. '''
+    logging.debug("------------------------")
+    logging.debug("Printing Split: \n%s" % split)
+    logging.debug("Printing Index: \n%s" % index)
+    logging.debug("Printing no of splits: \n%s" % no_of_splits)
+    logging.debug("Printing rules applied: \n%s" % rule_applied)
+    logging.debug("------------------------")
 
-logging.debug("New splits are: %s" % new_splits)
-logging.debug("Size of new splits is: %d" % len(new_splits))
-logging.debug("New rules applied are: %s" % new_rule_applied)
-logging.debug("Value loaded in os is: %s" % op)
+    ''' Does further split of rules and words and queries morpholigical place and writes result in a result file '''
+    split_final()
+    ''' Output of result file is matching in b/w Python and CPP code with only order difference. '''
 
-# Many of the code snippets are just translated, not optimized
-            
-calculate_costs()
+    logging.debug("New splits are: %s" % new_splits)
+    logging.debug("Size of new splits is: %d" % len(new_splits))
+    logging.debug("New rules applied are: %s" % new_rule_applied)
+    logging.debug("Value loaded in os is: %s" % op)
 
-logging.debug('Total cost (tot_cost) :\n %s' % tot_cost)
-logging.debug('Cost (costs) :\n %s' % costs)
-logging.debug('Output1 (output1) :\n %s' % output1)
+    # Many of the code snippets are just translated, not optimized
 
-logging.debug('Final_cost before sorting :\n %s' % final_costs)
-final_costs.sort(reverse = True)
-logging.debug('Final cost after sorting :\n %s' % final_costs)
-count = 0
-fount = 0
-correct_ones = 0
-for each in range(0, len(final_costs)):
-   temp1 = output1[final_costs[each]] 
-   count = each + 1
-   logging.debug(temp1[0])
-   word = "+".join(temp1[0])
-   logging.debug(args.switch)
-   if args.switch == "testing" and (count == 1):
-       print("%s = %s\t%s" % (args.word, word, final_costs[each]))
-       found = 1
-   elif args.switch == "compare" and (word == 'sandhi'):
-       correct_ones += 1
-       print("\nThe expected split for : " + args.word)
-       print("%s\t %s\t %s" % (word, final_costs[i], count))
-       found = 1
-       # Put ranks logic
-       # ranks[count]=ranks[count]+1;
+    calculate_costs()
 
-# Not porting further as it seems all is for -C option, which is not used.
+    logging.debug('Total cost (tot_cost) :\n %s' % tot_cost)
+    logging.debug('Cost (costs) :\n %s' % costs)
+    logging.debug('Output1 (output1) :\n %s' % output1)
+
+    logging.debug('Final_cost before sorting :\n %s' % final_costs)
+    final_costs.sort(reverse = True)
+    logging.debug('Final cost after sorting :\n %s' % final_costs)
+    count = 0
+    fount = 0
+    correct_ones = 0
+    for each in range(0, len(final_costs)):
+       temp1 = output1[final_costs[each]]
+       count = each + 1
+       logging.debug(temp1[0])
+       word = "+".join(temp1[0])
+       logging.debug(args.switch)
+       if args.switch == "testing" and (count == 1):
+           print("%s = %s\t%s" % (args.word, word, final_costs[each]))
+           found = 1
+       elif args.switch == "compare" and (word == 'sandhi'):
+           correct_ones += 1
+           print("\nThe expected split for : " + args.word)
+           print("%s\t %s\t %s" % (word, final_costs[i], count))
+           found = 1
+           # Put ranks logic
+           # ranks[count]=ranks[count]+1;
+
+    # Not porting further as it seems all is for -C option, which is not used.
