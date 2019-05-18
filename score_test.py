@@ -166,17 +166,22 @@ if __name__ == "__main__":
 
             # call the NEW program and get the result
             try:
-                l_result = subprocess.check_output(l_cmd.split())
+                l_result = subprocess.check_output(l_cmd.split(), timeout=60)
                 l_result = l_result.decode('utf-8')
+            except subprocess.TimeoutExpired as e:
+                print('   *** Failed (timeout expired) ***')
+                l_result_old = ''
+            except subprocess.CalledProcessError as e:
+                print('   *** Failed (return code = {0}) ***'.format(e.returncode))
+                l_result_old = ''
             except Exception as e:
-                l_result = ''
+                print('   *** Failed (unknown cause) ***')
+                l_result_old = ''
 
             if re.search('No splittings found', l_result):
                 # case where no Sandhi split is returned (Why does this happen so often ?)
-                print('   *** Failed (no result) ***')
-            elif not re.search('=', l_result):
-                print('   *** Failed (command return an error) ***')
-            else:
+                print('   *** Failed (no result proposed) ***')
+            elif re.search('=', l_result):
                 l_candidate_count += 1
                 print('   --->', l_result, end='')
                 # retrieval of the sandhi split value (candidate)
@@ -216,9 +221,16 @@ if __name__ == "__main__":
 
             # call the OLD program and get the result
             try:
-                l_result_old = subprocess.check_output(l_cmd_old.split(), stderr=subprocess.STDOUT)
+                l_result_old = subprocess.check_output(l_cmd_old.split(), stderr=subprocess.STDOUT, timeout=60)
                 l_result_old = l_result_old.decode('utf-8')
+            except subprocess.TimeoutExpired as e:
+                print('   *** Failed (timeout expired) ***')
+                l_result_old = ''
+            except subprocess.CalledProcessError as e:
+                print('   *** Failed (return code = {0}) ***'.format(e.returncode))
+                l_result_old = ''
             except Exception as e:
+                print('   *** Failed (unknown cause) ***')
                 l_result_old = ''
 
             # the result may be more than one line long
