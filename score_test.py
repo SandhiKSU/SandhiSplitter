@@ -149,6 +149,10 @@ if __name__ == "__main__":
             l_sandhied = deva_2_wx(l_sandhied_deva)
             l_goal = deva_2_wx(l_goal_deva)
 
+            # remove any non alphabetic characters
+            l_sandhied = re.sub(r'[^a-zA-Z]', '', l_sandhied)
+            l_goal = re.sub(r'[^a-zA-Z+]', '', l_goal)
+
             # l_sandhied = form with Sandhi, l_goal = the Sandhi split that should be obtained
             print('   l_sandhied  : {1} [{0}]'.format(l_sandhied_deva, l_sandhied))
             print('   l_goal      : {1} [{0}]'.format(l_goal_deva, l_goal))
@@ -161,12 +165,17 @@ if __name__ == "__main__":
             print('   l_cmd       : ' + l_cmd)
 
             # call the NEW program and get the result
-            l_result = subprocess.check_output(l_cmd.split())
-            l_result = l_result.decode('utf-8')
+            try:
+                l_result = subprocess.check_output(l_cmd.split())
+                l_result = l_result.decode('utf-8')
+            except Exception as e:
+                l_result = ''
 
             if re.search('No splittings found', l_result):
                 # case where no Sandhi split is returned (Why does this happen so often ?)
-                print('   *** Failed ***')
+                print('   *** Failed (no result) ***')
+            elif not re.search('=', l_result):
+                print('   *** Failed (command return an error) ***')
             else:
                 l_candidate_count += 1
                 print('   --->', l_result, end='')
@@ -206,8 +215,11 @@ if __name__ == "__main__":
             print('   l_cmd_old   :' + l_cmd_old)
 
             # call the OLD program and get the result
-            l_result_old = subprocess.check_output(l_cmd_old.split(), stderr=subprocess.STDOUT)
-            l_result_old = l_result_old.decode('utf-8')
+            try:
+                l_result_old = subprocess.check_output(l_cmd_old.split(), stderr=subprocess.STDOUT)
+                l_result_old = l_result_old.decode('utf-8')
+            except Exception as e:
+                l_result_old = ''
 
             # the result may be more than one line long
             for l_result_line in l_result_old.split('\n'):
