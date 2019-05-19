@@ -158,6 +158,7 @@ if __name__ == "__main__":
             print('   l_goal      : {1} [{0}]'.format(l_goal_deva, l_goal))
             if len(l_sandhied) > 25:
                 print('*** Not doing it: too long ***')
+                l_line_count -= 1
                 continue
 
             # new program ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
